@@ -1,0 +1,6 @@
+TITLE="Test"
+FILETYPE="FULL"
+VARIABLES= "X" "Y"
+1 1
+2 1
+1 2
