@@ -109,16 +109,16 @@ def create_points(h,n,l):
         else:
             temp=0
     return points
-def create_text(n,h,points,triangles,volume_fraction):
+def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y):
     text_file = open("triangle_upload_new.dat", "w")
     text_file.write("TITLE=\"TRIANGLE UPLOAD NEW\"\n")
-    text_file.write("VARIABLES= \"X\",\"Y\",\"Volume Fraction\"\n")
+    text_file.write("VARIABLES= \"X\",\"Y\",\"Volume Fraction\",\"U\",\"V\"\n")
     text_file.write("ZONE\nDataPacking=Block\nZoneType=FETRIANGLE\n")
     text_file.write("N=")
     text_file.write(str(len(points)))
     text_file.write(" E=")
     text_file.write(str(n*2-2+(2*n-2)*(h-2)))
-    text_file.write("\nVARLOCATION=([3]=CELLCENTERED)\n")
+    text_file.write("\nVARLOCATION=([3-5]=CELLCENTERED)\n")
 
     for i in range(len(points)):
             text_file.write (str(points[i].x)+" ")
@@ -128,6 +128,12 @@ def create_text(n,h,points,triangles,volume_fraction):
     text_file.write ("\n")
     for i in range(len(volume_fraction)):
             text_file.write (str(volume_fraction[i])+" ")
+    text_file.write ("\n")
+    for i in range(len(normal_x)):
+            text_file.write (str(normal_x[i])+" ")
+    text_file.write ("\n")
+    for i in range(len(normal_y)):
+            text_file.write (str(normal_y[i])+" ")
     text_file.write ("\n")
     for i in range(len(triangles)):
         temp_triangle=triangles[i]
@@ -156,7 +162,7 @@ def area(point):
 def intersection_line_circle(u,v,radius,center_circle):
     u=u-center_circle
     v=v-center_circle
-    m=(u.y-v.y)/(u.x-v.x)
+    m=float((u.y-v.y)/(u.x-v.x))
     b=u.y-m*u.x
     x1=(-2*m*b-sqrt((2*m*b)**2-4*(1+m**2)*(b**2-radius**2)))/2/(1+m**2)
     temp_vector=vector(x1,x1*m+b)
@@ -165,20 +171,7 @@ def intersection_line_circle(u,v,radius,center_circle):
     else:
         x1=(-2*m*b+sqrt((2*m*b)**2-4*(1+m**2)*(b**2-radius**2)))/2/(1+m**2)
         return vector(x1,x1*m+b)+center_circle
-def find_volume_fraction(points,triangles,n,h,l,radius):
-    #finding point in mesh
-    if n%2==0:
-        if h%2==0:
-            radius_vector=vector((n-1)*l/2,(h-1)*l/2-l/2)
-        else:
-            radius_vector=vector((n-1)*l/2,(h-1)*l/2)
-    else:
-        if h%2==0:
-            radius_vector=vector((n-1)*l/2,(h-1)*l/2-l/2)
-        else:
-            radius_vector=vector((n-1)*l/2+l/2,(h-1)*l/2)
-    print (radius_vector.x)
-    print (radius_vector.y)
+def find_volume_fraction(points,triangles,n,h,l,radius,radius_vector):
     count=0
     #initializing array
     volume_fraction=[]
@@ -245,16 +238,116 @@ def find_volume_fraction(points,triangles,n,h,l,radius):
 
         count=0
     return volume_fraction
+def find_normal(points,triangles,volume_fraction,radius_vector):
+    normal_x=[]
+    normal_y=[]
+    for i in range(len(triangles)):
+        normal_x.append(0)
+        normal_y.append(0)
+    count=0
+
+    #triangles with one point in shape
+    for i in range(len(triangles)):
+        temp_triangle=triangles[i]
+        intersection_points=[]
+
+        for j in range(3):
+            if (Length(points[temp_triangle[j]]-radius_vector))<=radius:
+                index=j
+                count+=1
+        if (count==1 and volume_fraction[i]>0):
+            angle=0
+            count2=0
+            for k in range (3):
+                if k!=index:
+                    temp_intersection=intersection_line_circle(points[temp_triangle[index]],points[temp_triangle[k]],radius,radius_vector)
+                    if temp_intersection.x-radius_vector.x>0:
+                        if temp_intersection.y-radius_vector.y>0:
+                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))
+                        else:
+                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))+2*pi
+                    else:
+                        if temp_intersection.y-radius_vector.y>0:
+                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))+pi
+                        else:
+                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))+pi
+                    intersection_points.append(temp_intersection)
+                    if count2==0:
+                        angle=temp_angle
+                        count2+=1
+                    else:
+                        if abs(angle-temp_angle)>pi:
+                            angle=(angle+temp_angle-2*pi)/2
+                        else:
+                            angle=(angle+temp_angle)/2
+            normal_x[i]=cos(angle)
+            normal_y[i]=sin(angle)
+        count=0
+
+    #triangles with two point in shape
+    for i in range(len(triangles)):
+        temp_triangle=triangles[i]
+        index=[]
+        for j in range(3):
+            if (Length(points[temp_triangle[j]]-radius_vector))<=radius:
+                count+=1
+                index.append(j)
+        if count==2:
+            volume_fraction[i]=0.75
+            for p in range(3):
+                if p!=index[0] and p!=index[1]:
+                    index2=p
+            temp_intersection2=[]
+            for k in range(2):
+                temp_intersection2.append(intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[k]]],radius,radius_vector))
+
+                if temp_intersection2[k].x-radius_vector.x>0:
+                    if temp_intersection2[k].y-radius_vector.y>0:
+                         temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))
+                    else:
+                        temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))+2*pi
+                else:
+                    if temp_intersection2[k].y-radius_vector.y>0:
+                         temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))+pi
+                    else:
+                         temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))+pi
+                if k==0:
+                    angle=temp_angle
+                else:
+                    if abs(angle-temp_angle)>pi:
+                        angle=(angle+temp_angle-2*pi)/2
+                    else:
+                        angle=(angle+temp_angle)/2
+            normal_x[i]=cos(angle)
+            normal_y[i]=sin(angle)
+        count=0
+    return normal_x,normal_y
+def find_center_of_circle(n,h,l):
+    if n%2==0:
+        if h%2==0:
+            radius_vector=vector((n-1)*l/2,(h-1)*l/2-l/2)
+        else:
+            radius_vector=vector((n-1)*l/2,(h-1)*l/2)
+    else:
+        if h%2==0:
+            radius_vector=vector((n-1)*l/2,(h-1)*l/2-l/2)
+        else:
+            radius_vector=vector((n-1)*l/2+l/2,(h-1)*l/2)
+    print(radius_vector.x)
+    print(radius_vector.y)
+    return radius_vector
 l=3 #length of triangle
-h=25 #number of rows
-n=25 #number of columns
-radius=10 #radius of circle
+h=5 #number of rows
+n=5 #number of columns
+radius=2 #radius of circle
 
 points=create_points(h,n,l)
 test=unstructured_mesh(points,l,h,n)
 triangler=test.triangles()
-volume_fraction=find_volume_fraction(points,triangler,n,h,l,radius)
-create_text(n,h,points,triangler,volume_fraction)
+radius_vector=find_center_of_circle(n,h,l)
+volume_fraction=find_volume_fraction(points,triangler,n,h,l,radius,radius_vector)
+normal_x,normal_y=find_normal(points,triangler,volume_fraction,radius_vector)
+create_text(n,h,points,triangler,volume_fraction,normal_x,normal_y)
 
 
 
