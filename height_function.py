@@ -14,6 +14,9 @@ def Dot(u,v):
     return u.x*v.x+v.y*u.y
 def Length(u):
     return (u.x**2+u.y**2)**0.5
+def Cross_product(u,v):
+    #UcrossV
+    return u.x*v.y-u.y*v.x
 
 class edge(object):
     def __init__(self,points,point_list):
@@ -109,7 +112,7 @@ def create_points(h,n,l):
         else:
             temp=0
     return points
-def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y):
+def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y,rectangle_vertices):
     text_file = open("triangle_upload_new.dat", "w")
     text_file.write("TITLE=\"TRIANGLE UPLOAD NEW\"\n")
     text_file.write("VARIABLES= \"X\",\"Y\",\"Volume Fraction\",\"U\",\"V\"\n")
@@ -140,6 +143,21 @@ def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y):
         for j in range(3):
             text_file.write (str(temp_triangle[j]+1)+" ")
         text_file.write ("\n")
+
+
+    ##extra zone for rectangle
+    text_file.write("ZONE\nDataPacking=Block\nZoneType=FEQUADRILATERAL\n")
+    text_file.write("N=")
+    text_file.write(str(4))
+    text_file.write(" E=")
+    text_file.write(str(1))
+    text_file.write("\nVARLOCATION=([3-5]=CELLCENTERED)\n")
+    for i in range(4):
+        text_file.write(str(rectangle_vertices[i].x)+" ")
+    text_file.write ("\n")
+    for i in range(4):
+        text_file.write(str(rectangle_vertices[i].y)+" ")
+    text_file.write ("\n1\n1\n1\n1 2 3 4")
 def find_edges_in_triangle(edges,triangles):
     edges_in_triangle=[]
     for j in range(len(triangles)):
@@ -171,6 +189,42 @@ def intersection_line_circle(u,v,radius,center_circle):
     else:
         x1=(-2*m*b+sqrt((2*m*b)**2-4*(1+m**2)*(b**2-radius**2)))/2/(1+m**2)
         return vector(x1,x1*m+b)+center_circle
+def intersection_line_line(v1,v2,u1,u2):
+    if u1.x==u2.x:
+        b2=u1.x
+        if v1.x==v2.x:
+            return False
+        else:
+            m1=(v2.y-v1.y)/(v2.x-v1.x)
+            b1=v2.y-m1*v2.x
+            temp=vector(b2,m1*b2+b1)
+            if abs(Length(v2-v1)-Length(v2-temp)-Length(v1-temp))<0.0000001 and abs(Length(u2-u1)-Length(u2-temp)-Length(u1-temp))<0.0000001:
+                return temp
+            else:
+                return False
+    elif v1.x==v2.x:
+        b1=v1.x
+        m2=(u2.y-u1.y)/(u2.x-u1.x)
+        b2=u2.y-m2*u2.x
+        temp=vector(b1,m2*b1+b2)
+        if abs(Length(v2-v1)-Length(v2-temp)-Length(v1-temp))<0.0000001 and abs(Length(u2-u1)-Length(u2-temp)-Length(u1-temp))<0.0000001:
+            return temp
+        else:
+            return False
+    else:
+        m1=(v2.y-v1.y)/(v2.x-v1.x)
+        m2=(u2.y-u1.y)/(u2.x-u1.x)
+        if m1==m2:
+            return False
+        b1=v2.y-m1*v2.x
+        b2=u2.y-m2*u2.x
+        x=(b2-b1)/(m1-m2)
+        y=m1*x+b1
+        temp=vector(x,y)
+        if abs(Length(v2-v1)-Length(v2-temp)-Length(v1-temp))<0.0000001 and abs(Length(u2-u1)-Length(u2-temp)-Length(u1-temp))<0.0000001:
+            return temp
+        else:
+            return False
 def find_volume_fraction(points,triangles,n,h,l,radius,radius_vector):
     count=0
     #initializing array
@@ -336,19 +390,255 @@ def find_center_of_circle(n,h,l):
     print(radius_vector.x)
     print(radius_vector.y)
     return radius_vector
+def find_point_distance(point,angle,distance):
+    return vector(cos(angle)*distance+point.x,sin(angle)*distance+point.y)
+def find_height_function_vertices(length,width,normal_vector,bottom_point):
+    #finding rectangle vertices
+    rectangle_vertices=[]
+    if normal_vector.y>0 and normal_vector.x==0:
+        rectangle_vertices.append(vector(bottom_point.x-width/2,bottom_point.y))
+        rectangle_vertices.append(vector(bottom_point.x-width/2,bottom_point.y+length))
+        rectangle_vertices.append(vector(bottom_point.x+width/2,bottom_point.y+length))
+        rectangle_vertices.append(vector(bottom_point.x+width/2,bottom_point.y))
+    elif normal_vector.y<0 and normal_vector.x==0:
+        rectangle_vertices.append(vector(bottom_point.x+width/2,bottom_point.y))
+        rectangle_vertices.append(vector(bottom_point.x+width/2,bottom_point.y-length))
+        rectangle_vertices.append(vector(bottom_point.x-width/2,bottom_point.y-length))
+        rectangle_vertices.append(vector(bottom_point.x-width/2,bottom_point.y))
+    elif normal_vector.x>0 and normal_vector.y==0:
+        rectangle_vertices.append(vector(bottom_point.x,bottom_point.y+width/2))
+        rectangle_vertices.append(vector(bottom_point.x+length,bottom_point.y+width/2))
+        rectangle_vertices.append(vector(bottom_point.x+length,bottom_point.y-width/2))
+        rectangle_vertices.append(vector(bottom_point.x,bottom_point.y-width/2))
+    elif normal_vector.x>0 and normal_vector.y==0:
+        rectangle_vertices.append(vector(bottom_point.x,bottom_point.y-width/2))
+        rectangle_vertices.append(vector(bottom_point.x-length,bottom_point.y-width/2))
+        rectangle_vertices.append(vector(bottom_point.x-length,bottom_point.y+width/2))
+        rectangle_vertices.append(vector(bottom_point.x,bottom_point.y+width/2))
+    elif normal_vector.x>0 and normal_vector.y>0:
+        rectangle_vertices.append(find_point_distance(bottom_point,pi/2+atan(normal_vector.y/normal_vector.x),width/2))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[0],atan(normal_vector.y/normal_vector.x),length))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[1],-pi/2+atan(normal_vector.y/normal_vector.x),width))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[2],pi+atan(normal_vector.y/normal_vector.x),length))
+    elif normal_vector.x<0 and normal_vector.y>0:
+        rectangle_vertices.append(find_point_distance(bottom_point,3/2*pi-atan(-normal_vector.y/normal_vector.x),width/2))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[0],pi-atan(-normal_vector.y/normal_vector.x),length))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[1],pi/2-atan(-normal_vector.y/normal_vector.x),width))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[2],-atan(-normal_vector.y/normal_vector.x),length))
+    elif normal_vector.x<0 and normal_vector.y<0:
+        rectangle_vertices.append(find_point_distance(bottom_point,-atan(normal_vector.y/normal_vector.x),width/2))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[0],pi+atan(normal_vector.y/normal_vector.x),length))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[1],pi/2+atan(normal_vector.y/normal_vector.x),width))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[2],atan(normal_vector.y/normal_vector.x),length))
+    elif normal_vector.x>0 and normal_vector.y<0:
+        rectangle_vertices.append(find_point_distance(bottom_point,atan(-normal_vector.y/normal_vector.x),width/2))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[0],-atan(-normal_vector.y/normal_vector.x),length))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[1],pi*3/2-atan(-normal_vector.y/normal_vector.x),width))
+        rectangle_vertices.append(find_point_distance(rectangle_vertices[2],pi-atan(-normal_vector.y/normal_vector.x),length))
+    return rectangle_vertices
+def find_height_function(rectangle_vertices,points,triangles):
+    rectangle_vertices.append(rectangle_vertices[0])
+    list_of_inside_triangles=[]
+    list_of_intersections=[]
+    output = []
+    area_inside_rectangle=[]
+    for i in range(len(triangles)):
+        area_inside_rectangle.append(0)
+
+    #finding intersection points
+    for i in triangles:
+        i.append(i[0])
+        temp_intersection=[]
+        for j in range(len(rectangle_vertices)-1):
+            for k in range(len(i)-1):
+                if intersection_line_line(points[i[k]],points[i[k+1]],rectangle_vertices[j],rectangle_vertices[j+1])!=False:
+                    list_of_inside_triangles.append(i)
+                    temp_intersection.append(intersection_line_line(points[i[k]],points[i[k+1]],rectangle_vertices[j],rectangle_vertices[j+1]))
+        list_of_intersections.append(temp_intersection)
+    for x in list_of_inside_triangles:
+        if x not in output:
+            output.append(x)
+    list_of_inside_triangles=output
+    #print(list_of_inside_triangles)
+    #for i in range(len(list_of_intersections)):
+        #for j in list_of_intersections[i]:
+            #print("\n")
+            #print(j.x)
+            #print(j.y)
+        #print("ss")
+
+    #finding nodes inside rectangle
+    list_of_one_node_inside=[]
+    inside_points=[]
+    for i in range(len(triangles)):
+        count=0
+        temp=[]
+        temp_triangle=triangles[i]
+        for j in range(len(temp_triangle)-1):
+            if (0<Dot(points[temp_triangle[j]]-rectangle_vertices[1],rectangle_vertices[2]-rectangle_vertices[1])<Dot(rectangle_vertices[2]-rectangle_vertices[1],rectangle_vertices[2]-rectangle_vertices[1])) and (0<Dot(points[temp_triangle[j]]-rectangle_vertices[1],rectangle_vertices[0]-rectangle_vertices[1])<Dot(rectangle_vertices[0]-rectangle_vertices[1],rectangle_vertices[0]-rectangle_vertices[1])):
+                temp.append(points[temp_triangle[j]])
+                count+=1
+        if count==1:
+            list_of_one_node_inside.append(i)
+        inside_points.append(temp)
+        #3 nodes inside rectangle
+        if count==3:
+            area_inside_rectangle[i]=area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+        #2 nodes inside rectangle
+        elif count==2:
+            count2=0
+            for j in range(len(rectangle_vertices)-1):
+                total_area=area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                area1=area([rectangle_vertices[j],points[temp_triangle[1]],points[temp_triangle[2]]])
+                area2=area([rectangle_vertices[j],points[temp_triangle[0]],points[temp_triangle[2]]])
+                area3=area([rectangle_vertices[j],points[temp_triangle[0]],points[temp_triangle[1]]])
+                if abs(area1+area2+area3-total_area)<0.000001:
+                    count2=1
+                    inside_rec_point=rectangle_vertices[j]
+            for j in range(len(temp_triangle)-1):
+                if points[temp_triangle[j]]!=temp[0] and points[temp_triangle[j]]!=temp[1]:
+                    temp.append(points[temp_triangle[j]])
+            temp3=[]
+            for k in range(len(temp)-1):
+                temp3.append(temp[k])
+            temp2=list_of_intersections[i]
+            temp3.append(temp2[0])
+            area_inside_rectangle[i]=area(temp3)
+            temp3=[]
+            for j in temp2:
+                temp3.append(j)
+            if abs(area([temp[0],temp[1],temp2[0]])+area([temp2[0],temp2[1],temp[2]])+area([temp2[0],temp2[1],temp[1]])-area([temp[0],temp[1],temp[2]]))<0.0000000001:
+                temp3.append(temp[1])
+            else:
+                temp3.append(temp[0])
+            area_inside_rectangle[i]=area_inside_rectangle[i]+area(temp3)
+            if count2==1:
+                temp3[2]=inside_rec_point
+                area_inside_rectangle[i]=area_inside_rectangle[i]+area(temp3)
+        elif count==0:
+            temp3=[]
+            if list_of_intersections[i]!=[]:
+                if len(list_of_intersections[i])==4:
+                    distance=length
+                    for k in rectangle_vertices:
+                        for j in list_of_intersections[i]:
+                            if Length(k-j)<distance:
+                                node=k
+                                distance=Length(k-j)
+                    distance=0
+                    far_points=[]
+                    intersection3=list_of_intersections[i]
+                    for k in intersection3:
+                        if Length(k-node)>distance:
+                            distance=Length(k-node)
+                            temp5=k
+                    far_points.append(temp5)
+                    distance=0
+                    for k in intersection3:
+                        if k!=far_points[0]:
+                            if Length(k-node)>distance:
+                                distance=Length(k-node)
+                                temp5=k
+                    far_points.append(temp5)
+                    area_inside_rectangle[i]=area([far_points[0],far_points[1],node])
+                    for k in intersection3:
+                        if k!=far_points[0] and k!=far_points[1]:
+                            far_points.append(k)
+                    area_inside_rectangle[i]=area_inside_rectangle[i]-area([far_points[2],far_points[3],node])
+                else:
+                    for k in range(len(rectangle_vertices)-1):
+                        total_area=area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                        area1=area([rectangle_vertices[k],points[temp_triangle[1]],points[temp_triangle[2]]])
+                        area2=area([rectangle_vertices[k],points[temp_triangle[0]],points[temp_triangle[2]]])
+                        area3=area([rectangle_vertices[k],points[temp_triangle[0]],points[temp_triangle[1]]])
+                        if abs(area1+area2+area3-total_area)<0.000001:
+                            temp2=rectangle_vertices[k]
+                    for k in list_of_intersections[i]:
+                        temp3.append(k)
+                    temp3.append(temp2)
+                    area_inside_rectangle[i]=area(temp3)
+    for i in list_of_one_node_inside:
+        temp_triangle=triangles[i]
+        count2=0
+        for j in range(len(rectangle_vertices)-1):
+            total_area=area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+            area1=area([rectangle_vertices[j],points[temp_triangle[1]],points[temp_triangle[2]]])
+            area2=area([rectangle_vertices[j],points[temp_triangle[0]],points[temp_triangle[2]]])
+            area3=area([rectangle_vertices[j],points[temp_triangle[0]],points[temp_triangle[1]]])
+            if abs(area1+area2+area3-total_area)<0.000001:
+                count2=1
+                inside_rec_point=rectangle_vertices[j]
+        #case 2
+        if count2==0:
+            temp4=[]
+            for k in list_of_intersections[i]:
+                temp4.append(k)
+            temp2=inside_points[i]
+            temp4.append(temp2[0])
+            #case 1
+            if len(temp4)==3:
+                area_inside_rectangle[i]=area(temp4)
+            #case 3
+            else:
+                nodes=inside_points[i]
+                intersection=list_of_intersections[i]
+
+                for k in range(len(temp_triangle)-1):
+                    if points[temp_triangle[k]]!=nodes[0]:
+                        nodes.append(points[temp_triangle[k]])
+                intersection2=[]
+                for k in range(len(intersection)):
+                    if (nodes[0].y-intersection[k].y)/(nodes[0].x-intersection[k].x)==(nodes[0].y-nodes[1].y)/(nodes[0].x-nodes[1].x):
+                        intersection2.append(intersection[k])
+                    elif (nodes[0].y-intersection[k].y)/(nodes[0].x-intersection[k].x)==(nodes[0].y-nodes[2].y)/(nodes[0].x-nodes[2].x):
+                        intersection2.append(intersection[k])
+                for k in range(4):
+                    if intersection[k]!=intersection2[0] and intersection[k]!=intersection2[1]:
+                        intersection2.append(intersection[k])
+                distance=length
+                for k in rectangle_vertices:
+                    if distance>Length(k-intersection2[2]):
+                        temp4=k
+                        distance=Length(k-intersection2[2])
+
+                area_inside_rectangle[i]=area([intersection2[0],intersection2[1],nodes[0]])+area([temp4,intersection2[0],intersection2[1]])-area([temp4,intersection2[2],intersection2[3]])
+        elif count2==1:
+            temp4=[]
+            for k in list_of_intersections[i]:
+                temp4.append(k)
+            temp4.append(inside_rec_point)
+            area_inside_rectangle[i]=area(temp4)
+            temp2=inside_points[i]
+            temp4[2]=temp2[0]
+            area_inside_rectangle[i]=area_inside_rectangle[i]+area(temp4)
+
+    print(area_inside_rectangle)
+    total=0
+    for i in area_inside_rectangle:
+        total=total+i
+    print (total)
+#mesh parameters
 l=3 #length of triangle
 h=5 #number of rows
 n=5 #number of columns
+#circle parameters
 radius=2 #radius of circle
+circle_center=find_center_of_circle(n,h,l)
+#rectangle parameters
+length=7
+width=5
+normal=vector(1,1.05)
+bottom_point=vector(3.5,2.5)
+
 
 points=create_points(h,n,l)
 test=unstructured_mesh(points,l,h,n)
 triangler=test.triangles()
-radius_vector=find_center_of_circle(n,h,l)
-volume_fraction=find_volume_fraction(points,triangler,n,h,l,radius,radius_vector)
-normal_x,normal_y=find_normal(points,triangler,volume_fraction,radius_vector)
-create_text(n,h,points,triangler,volume_fraction,normal_x,normal_y)
-
+volume_fraction=find_volume_fraction(points,triangler,n,h,l,radius,circle_center)
+normal_x,normal_y=find_normal(points,triangler,volume_fraction,circle_center)
+rectangle_vertices=find_height_function_vertices(length,width,normal,bottom_point)
+create_text(n,h,points,triangler,volume_fraction,normal_x,normal_y,rectangle_vertices)
+find_height_function(rectangle_vertices,points,triangler)
 
 
 
