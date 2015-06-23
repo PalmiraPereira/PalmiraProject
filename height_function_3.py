@@ -113,33 +113,49 @@ def create_points(h,n,l):
         else:
             temp=0
     return points
-def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y,all_rectangle_points,normal_vof):
+def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y,all_rectangle_points,normal_vof,error_curvature,curvature):
     text_file = open("triangle_upload_new.dat", "w")
     text_file.write("TITLE=\"TRIANGLE UPLOAD NEW\"\n")
-    text_file.write("VARIABLES= \"X\",\"Y\",\"Volume Fraction\",\"U\",\"V\",\"CellNumber\"\n")
+    text_file.write("VARIABLES= \"X\",\"Y\",\"Volume Fraction\",\"U\",\"V\",\"Curvature\",\"Curvature Error\",\"CellNumber\"\n")
     text_file.write("ZONE\nDataPacking=Block\nZoneType=FETRIANGLE\n")
     text_file.write("N=")
     text_file.write(str(len(points)))
     text_file.write(" E=")
     text_file.write(str(n*2-2+(2*n-2)*(h-2)))
-    text_file.write("\nVARLOCATION=([3-6]=CELLCENTERED)\n")
+    text_file.write("\nVARLOCATION=([3-8]=CELLCENTERED)\n")
     for i in range(len(points)):
-            text_file.write (str(points[i].x)+" ")
+        text_file.write (str(points[i].x)+" ")
     text_file.write ("\n")
     for i in range(len(points)):
-            text_file.write (str(points[i].y)+" ")
+        text_file.write (str(points[i].y)+" ")
     text_file.write ("\n")
     for i in range(len(volume_fraction)):
-            text_file.write (str(volume_fraction[i])+" ")
+        text_file.write (str(volume_fraction[i])+" ")
     text_file.write ("\n")
     for i in range(len(normal_x)):
-            text_file.write (str(normal_vof[i].x)+" ")
+        text_file.write (str(normal_vof[i].x)+" ")
     text_file.write ("\n")
     for i in range(len(normal_y)):
-            text_file.write (str(normal_vof[i].y)+" ")
+        text_file.write (str(normal_vof[i].y)+" ")
+    text_file.write ("\n")
+    counter=0
+    for i in range(len(volume_fraction)):
+        if volume_fraction[i]!=0 and volume_fraction[i]!=1:
+            text_file.write (str(curvature[counter])+" ")
+            counter=counter+1
+        else:
+            text_file.write (str(0)+" ")
+    text_file.write ("\n")
+    counter=0
+    for i in range(len(volume_fraction)):
+        if volume_fraction[i]!=0 and volume_fraction[i]!=1:
+            text_file.write (str(error_curvature[counter])+" ")
+            counter=counter+1
+        else:
+            text_file.write (str(0)+" ")
     text_file.write ("\n")
     for i in range(len(normal_y)):
-            text_file.write (str(i)+" ")
+        text_file.write (str(i)+" ")
     text_file.write ("\n")
     for i in range(len(triangles)):
         temp_triangle=triangles[i]
@@ -147,14 +163,14 @@ def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y,all_recta
             text_file.write (str(temp_triangle[j]+1)+" ")
         text_file.write ("\n")
 
-
+    '''
     ##extra zone for rectangle
     text_file.write("ZONE\nDataPacking=Block\nZoneType=FEQUADRILATERAL\n")
     text_file.write("N=")
     text_file.write(str(len(all_rectangle_points)*4))
     text_file.write(" E=")
     text_file.write(str(len(all_rectangle_points)))
-    text_file.write("\nVARLOCATION=([3-6]=CELLCENTERED)\n")
+    text_file.write("\nVARLOCATION=([3-8]=CELLCENTERED)\n")
     for i in all_rectangle_points:
         for j in range(4):
             text_file.write(str(i[j].x)+" ")
@@ -162,6 +178,12 @@ def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y,all_recta
     for i in all_rectangle_points:
         for j in range(4):
             text_file.write(str(i[j].y)+" ")
+    text_file.write ("\n")
+    for i in range(len(all_rectangle_points)):
+        text_file.write("4 ")
+    text_file.write ("\n")
+    for i in range(len(all_rectangle_points)):
+        text_file.write("4 ")
     text_file.write ("\n")
     for i in range(len(all_rectangle_points)):
         text_file.write("4 ")
@@ -181,6 +203,62 @@ def create_text(n,h,points,triangles,volume_fraction,normal_x,normal_y,all_recta
             text_file.write ("\n")
         else:
             text_file.write(str(i+1)+" ")
+    '''
+
+    for j in range(len(all_rectangle_points)):
+
+        if j%3==0:
+            w=all_rectangle_points[j]
+            text_file.write("ZONE\nDataPacking=Block\nZoneType=FEQUADRILATERAL\n")
+            text_file.write("N=")
+            text_file.write(str(12))
+            text_file.write(" E=")
+            text_file.write(str(3))
+            text_file.write("\nVARLOCATION=([3-8]=CELLCENTERED)\n")
+            for i in range(4):
+                text_file.write(str(w[i].x)+" ")
+            w=all_rectangle_points[j+1]
+            for i in range(4):
+                text_file.write(str(w[i].x)+" ")
+            w=all_rectangle_points[j+2]
+            for i in range(4):
+                text_file.write(str(w[i].x)+" ")
+
+            text_file.write ("\n")
+            w=all_rectangle_points[j]
+            for i in range(4):
+                text_file.write(str(w[i].y)+" ")
+            w=all_rectangle_points[j+1]
+            for i in range(4):
+                text_file.write(str(w[i].y)+" ")
+            w=all_rectangle_points[j+2]
+            for i in range(4):
+                text_file.write(str(w[i].y)+" ")
+            text_file.write ("\n")
+
+            text_file.write(str(j)+" "+str(j)+" "+str(j))
+            text_file.write ("\n")
+
+            text_file.write("4 4 4 ")
+            text_file.write ("\n")
+
+            text_file.write("4 4 4")
+            text_file.write ("\n")
+
+            text_file.write("4 4 4 ")
+            text_file.write ("\n")
+
+            text_file.write("4 4 4")
+            text_file.write ("\n")
+            text_file.write("1 1 1")
+            text_file.write ("\n")
+
+            text_file.write("1 2 3 4 ")
+            text_file.write ("\n")
+            text_file.write("5 6 7 8 ")
+            text_file.write ("\n")
+            text_file.write("9 10 11 12 ")
+            text_file.write ("\n")
 
     text_file.close()
 def create_text_radius(approximate_radius_points_textfile):
@@ -218,18 +296,35 @@ def intersection_line_circle(u,v,radius,center_circle):
         x1=(-2*m*b-sqrt((2*m*b)**2-4*(1+m**2)*(b**2-radius**2)))*0.5/(1+m**2)
         temp_vector=vector(x1,x1*m+b)
         if (abs(Length(u-temp_vector)+Length(v-temp_vector)-Length(u-v)))<=0.0001:
-            return vector(x1,x1*m+b)+center_circle
+            x2=(-2*m*b+sqrt((2*m*b)**2-4*(1+m**2)*(b**2-radius**2)))*0.5/(1+m**2)
+            temp_vector=vector(x2,x2*m+b)
+            if(abs(Length(u-temp_vector)+Length(v-temp_vector)-Length(u-v)))<=0.0001:
+                return vector(x1,x1*m+b)+center_circle,vector(x2,x2*m+b)+center_circle
+            else:
+                return vector(x1,x1*m+b)+center_circle,-1
         else:
             x1=(-2*m*b+sqrt((2*m*b)**2-4*(1+m**2)*(b**2-radius**2)))*0.5/(1+m**2)
-            return vector(x1,x1*m+b)+center_circle
+            temp_vector=vector(x1,x1*m+b)
+            if (abs(Length(u-temp_vector)+Length(v-temp_vector)-Length(u-v)))<=0.0001:
+                return vector(x1,x1*m+b)+center_circle,-1
+            else:
+                return vector(-1,-1)
     else:
         b=u.x
         y1=sqrt(radius**2-b**2)
         temp_vector=vector(b,y1)
         if (abs(Length(u-temp_vector)+Length(v-temp_vector)-Length(u-v)))<=0.0001:
-            return vector(b,y1)+center_circle
+            temp_vector=vector(b,-y1)
+            if (abs(Length(u-temp_vector)+Length(v-temp_vector)-Length(u-v)))<=0.0001:
+                return vector(b,y1)+center_circle,vector(b,-y1)+center_circle
+            else:
+                return vector(b,y1)+center_circle,-1
         else:
-            return vector(b,-y1)+center_circle
+            temp_vector=vector(b,-y1)
+            if (abs(Length(u-temp_vector)+Length(v-temp_vector)-Length(u-v)))<=0.0001:
+                return vector(b,-y1)+center_circle,-1
+            else:
+                return vector(-1,-1)
 def intersection_line_line(v1,v2,u1,u2):
     if u1.x==u2.x:
         b2=u1.x
@@ -270,15 +365,16 @@ def find_volume_fraction(points,triangles,n,h,l,radius,radius_vector):
     count=0
     #initializing array
     volume_fraction=[]
+    total_area=[]
     for i in range(len(triangles)):
-            volume_fraction.append(0)
-
+        volume_fraction.append(0)
+        total_area.append(0)
     #triangles all in shape
     for i in range(len(triangles)):
         temp_triangle=triangles[i]
         if (Length(points[temp_triangle[0]]-radius_vector))<=radius and (Length(points[temp_triangle[1]]-radius_vector))<=radius and (Length(points[temp_triangle[2]]-radius_vector))<=radius:
             volume_fraction[i]=1
-
+        total_area[i]=volume_fraction[i]*area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
     #triangles with one point in shape
     temp_approximate_triangle=[]
 
@@ -288,20 +384,76 @@ def find_volume_fraction(points,triangles,n,h,l,radius,radius_vector):
             if (Length(points[temp_triangle[j]]-radius_vector))<=radius:
                 index=j
                 count+=1
-        if count==1:
+        if count==0:
+            counter=0
+            counter2=[]
+            midpoint=vector((points[temp_triangle[0]].x+points[temp_triangle[1]].x)*0.5,(points[temp_triangle[0]].y+points[temp_triangle[1]].y)*0.5)
 
+            if Length(midpoint-radius_vector)<radius:
+                counter=counter+1
+                temp_intersection=intersection_line_circle(points[temp_triangle[0]],points[temp_triangle[1]],radius,radius_vector)
+                temp_angle=acos(Dot(temp_intersection[0]-radius_vector,temp_intersection[1]-radius_vector)/Length(temp_intersection[0]-radius_vector)/Length(temp_intersection[1]-radius_vector))
+                volume_fraction[i]=((0.5)*radius*radius*(temp_angle-sin(temp_angle)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                counter2.append(volume_fraction[i])
+            midpoint=vector((points[temp_triangle[0]].x+points[temp_triangle[2]].x)*0.5,(points[temp_triangle[0]].y+points[temp_triangle[2]].y)*0.5)
+
+            if Length(midpoint-radius_vector)<radius :
+                counter=counter+1
+                temp_intersection=intersection_line_circle(points[temp_triangle[0]],points[temp_triangle[2]],radius,radius_vector)
+                temp_angle=acos(Dot(temp_intersection[0]-radius_vector,temp_intersection[1]-radius_vector)/Length(temp_intersection[0]-radius_vector)/Length(temp_intersection[1]-radius_vector))
+                volume_fraction[i]=((0.5)*radius*radius*(temp_angle-sin(temp_angle)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                counter2.append(volume_fraction[i])
+            midpoint=vector((points[temp_triangle[1]].x+points[temp_triangle[2]].x)*0.5,(points[temp_triangle[1]].y+points[temp_triangle[2]].y)*0.5)
+
+            if Length(midpoint-radius_vector)<radius :
+                counter=counter+1
+                temp_intersection=intersection_line_circle(points[temp_triangle[2]],points[temp_triangle[1]],radius,radius_vector)
+                temp_angle=acos(Dot(temp_intersection[0]-radius_vector,temp_intersection[1]-radius_vector)/Length(temp_intersection[0]-radius_vector)/Length(temp_intersection[1]-radius_vector))
+                volume_fraction[i]=((0.5)*radius*radius*(temp_angle-sin(temp_angle)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                counter2.append(volume_fraction[i])
+            if counter>1:
+                if counter2[0]>counter2[1]:
+                    volume_fraction[i]=counter2[0]-counter2[1]
+                else:
+                    volume_fraction[i]=counter2[1]-counter2[0]
+                print("poop")
+        if count==1:
             temp_approximate_triangle.append(points[temp_triangle[index]])
             for k in range (3):
                 if k!=index:
-                    temp_intersection=intersection_line_circle(points[temp_triangle[index]],points[temp_triangle[k]],radius,radius_vector)
-                    temp_approximate_triangle.append(temp_intersection)
+                    if intersection_line_circle(points[temp_triangle[index]],points[temp_triangle[k]],radius,radius_vector)[1]==-1:
+                        temp_intersection=intersection_line_circle(points[temp_triangle[index]],points[temp_triangle[k]],radius,radius_vector)[0]
+                        temp_approximate_triangle.append(temp_intersection)
+                    else:
+                        temp_intersection3=intersection_line_circle(points[temp_triangle[index]],points[temp_triangle[k]],radius,radius_vector)
+                        if temp_intersection3[0].x==points[temp_triangle[index]].x and temp_intersection3[0].y==points[temp_triangle[index]].y:
+                            temp_intersection=temp_intersection3[1]
+                            temp_approximate_triangle.append(temp_intersection)
+                        else:
+                            temp_intersection=temp_intersection3[0]
+                            temp_approximate_triangle.append(temp_intersection)
+
 
             temp_area=area(temp_approximate_triangle)
             temp_angle=acos(Dot(temp_approximate_triangle[1]-radius_vector,temp_approximate_triangle[2]-radius_vector)/Length(temp_approximate_triangle[2]-radius_vector)/Length(temp_approximate_triangle[1]-radius_vector))
-            volume_fraction[i]=(temp_area+(0.5)*radius*radius*(temp_angle-sin(temp_angle)))/(float(l)*l/2)
+            volume_fraction[i]=(temp_area+(0.5)*radius*radius*(temp_angle-sin(temp_angle)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+            outside_points=[]
+            for w in range(3):
+                if w!=index:
+                    outside_points.append(points[temp_triangle[w]])
+
+            midpoint=vector((outside_points[0].x+outside_points[1].x)*0.5,(outside_points[0].y+outside_points[1].y)*0.5)
+            if Length(midpoint-radius_vector)<radius:
+
+                temp_intersection4=intersection_line_circle(outside_points[0],outside_points[1],radius,radius_vector)
+                temp_angle=acos(Dot(temp_approximate_triangle[1]-radius_vector,temp_approximate_triangle[2]-radius_vector)/Length(temp_approximate_triangle[2]-radius_vector)/Length(temp_approximate_triangle[1]-radius_vector))
+                temp_angle2=acos(Dot(temp_intersection4[0]-radius_vector,temp_intersection4[1]-radius_vector)/Length(temp_intersection4[0]-radius_vector)/Length(temp_intersection4[1]-radius_vector))
+                volume_fraction[i]=(temp_area+(0.5)*radius*radius*(temp_angle-sin(temp_angle))-(0.5)*radius*radius*(temp_angle2-sin(temp_angle2)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+
             if volume_fraction[i]>1:
                 volume_fraction[i]=1
             temp_approximate_triangle=[]
+        total_area[i]=volume_fraction[i]*area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
         count=0
 
     #triangles with two point in shape
@@ -313,120 +465,94 @@ def find_volume_fraction(points,triangles,n,h,l,radius,radius_vector):
                 count+=1
                 index.append(j)
         if count==2:
-            volume_fraction[i]=0.75
             for p in range(3):
                 if p!=index[0] and p!=index[1]:
                     index2=p
             temp_intersection2=[]
-            for k in range(2):
-                temp_intersection2.append(intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[k]]],radius,radius_vector))
-            temp_triangle2=[temp_intersection2[0]]
-            for k in range(2):
-                temp_triangle2.append(points[temp_triangle[index[k]]])
-            temp_triangle3=[]
-            temp_triangle3.append(temp_intersection2[0])
-            temp_triangle3.append(temp_intersection2[1])
-            temp_triangle3.append(points[temp_triangle[index[1]]])
-            temp_area2=area(temp_triangle2)+area(temp_triangle3)
-            temp_angle=acos(Dot(temp_intersection2[0]-radius_vector,temp_intersection2[1]-radius_vector)/Length(temp_intersection2[0]-radius_vector)/Length(temp_intersection2[1]-radius_vector))
+            if intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[0]]],radius,radius_vector)[1]==-1 and intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[1]]],radius,radius_vector)[1]==-1:
+                for k in range(2):
+                    temp_intersection2.append(intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[k]]],radius,radius_vector)[0])
+                temp_triangle2=[temp_intersection2[0]]
+                for k in range(2):
+                    temp_triangle2.append(points[temp_triangle[index[k]]])
+                temp_triangle3=[]
+                temp_triangle3.append(temp_intersection2[0])
+                temp_triangle3.append(temp_intersection2[1])
+                temp_triangle3.append(points[temp_triangle[index[1]]])
+                temp_area2=area(temp_triangle2)+area(temp_triangle3)
+                temp_angle=acos(Dot(temp_intersection2[0]-radius_vector,temp_intersection2[1]-radius_vector)/Length(temp_intersection2[0]-radius_vector)/Length(temp_intersection2[1]-radius_vector))
 
-            volume_fraction[i]=(temp_area2+0.5*radius*radius*(temp_angle-sin(temp_angle)))/(float(l)*l/2)
-            if volume_fraction[i]>1:
-                volume_fraction[i]=1
+                volume_fraction[i]=(temp_area2+0.5*radius*radius*(temp_angle-sin(temp_angle)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                if volume_fraction[i]>1:
+                    volume_fraction[i]=1
+            elif intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[0]]],radius,radius_vector)[1]==-1:
+                temp_intersection2.append(intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[0]]],radius,radius_vector)[0])
+                temp_intersection3=intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[1]]],radius,radius_vector)
+                for j in range(len(temp_intersection3)):
 
+                    if temp_intersection3[j].x!=points[temp_triangle[index[1]]].x and temp_intersection3[j].y!=points[temp_triangle[index[1]]].y:
+                        temp_intersection2.append(temp_intersection3[j])
+
+                temp_triangle2=[temp_intersection2[1]]
+                for k in range(2):
+                    temp_triangle2.append(points[temp_triangle[index[k]]])
+
+                temp_triangle3=[]
+                temp_triangle3.append(temp_intersection2[0])
+                temp_triangle3.append(temp_intersection2[1])
+                temp_triangle3.append(points[temp_triangle[index[0]]])
+
+                temp_area2=area(temp_triangle2)+area(temp_triangle3)
+                temp_angle=acos(Dot(temp_intersection2[0]-radius_vector,temp_intersection2[1]-radius_vector)/Length(temp_intersection2[0]-radius_vector)/Length(temp_intersection2[1]-radius_vector))
+
+                volume_fraction[i]=(temp_area2+0.5*radius*radius*(temp_angle-sin(temp_angle)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                if volume_fraction[i]>1:
+                    volume_fraction[i]=1
+            elif intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[1]]],radius,radius_vector)[1]==-1:
+                temp_intersection2.append(intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[1]]],radius,radius_vector)[0])
+                temp_intersection3=intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[0]]],radius,radius_vector)
+                for j in range(len(temp_intersection3)):
+                    if temp_intersection3[j].x!=points[temp_triangle[index[0]]].x and temp_intersection3[j].y!=points[temp_triangle[index[0]]].y:
+                        temp_intersection2.append(temp_intersection3[j])
+
+                temp_triangle2=[temp_intersection2[1]]
+                for k in range(2):
+                    temp_triangle2.append(points[temp_triangle[index[k]]])
+
+                temp_triangle3=[]
+                temp_triangle3.append(temp_intersection2[0])
+                temp_triangle3.append(temp_intersection2[1])
+                temp_triangle3.append(points[temp_triangle[index[1]]])
+
+                temp_area2=area(temp_triangle2)+area(temp_triangle3)
+                temp_angle=acos(Dot(temp_intersection2[0]-radius_vector,temp_intersection2[1]-radius_vector)/Length(temp_intersection2[0]-radius_vector)/Length(temp_intersection2[1]-radius_vector))
+
+                volume_fraction[i]=(temp_area2+0.5*radius*radius*(temp_angle-sin(temp_angle)))/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
+                if volume_fraction[i]>1:
+                    volume_fraction[i]=1
+        total_area[i]=volume_fraction[i]*area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])
         count=0
+    total=0
+    for i in total_area:
+        total=i+total
+    print(total/pi/float((radius*radius)))
     return volume_fraction
-def find_normal(points,triangles,volume_fraction,radius_vector):
+def find_normal(points,triangles,volume_fraction,radius_vector,test,h):
     normal_x=[]
     normal_y=[]
     for i in range(len(triangles)):
         normal_x.append(0)
         normal_y.append(0)
-    count=0
 
     #triangles with one point in shape
     for i in range(len(triangles)):
-        temp_triangle=triangles[i]
-        intersection_points=[]
-
-        for j in range(3):
-            if (Length(points[temp_triangle[j]]-radius_vector))<=radius:
-                index=j
-                count+=1
-        if (count==1 and volume_fraction[i]>0):
-
-            angle=0
-            count2=0
-            for k in range (3):
-                if k!=index:
-                    temp_intersection=intersection_line_circle(points[temp_triangle[index]],points[temp_triangle[k]],radius,radius_vector)
-                    if temp_intersection.x-radius_vector.x>0:
-                        if temp_intersection.y-radius_vector.y>0:
-                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))
-                        else:
-                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))+2*pi
-                    else:
-                        if temp_intersection.y-radius_vector.y>0:
-                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))+pi
-                        else:
-                            temp_angle=atan((temp_intersection.y-radius_vector.y)/(temp_intersection.x-radius_vector.x))+pi
-                    intersection_points.append(temp_intersection)
-                    if count2==0:
-                        angle=temp_angle
-                        count2+=1
-                    else:
-                        if abs(angle-temp_angle)>pi:
-                            angle=(angle+temp_angle-2*pi)*0.5
-                        else:
-                            angle=(angle+temp_angle)*0.5
+        if volume_fraction[i]!=0 and volume_fraction[i]!=1:
+            triangler2=triangle(points,test.triangles()[i],h)
+            centroid=triangler2.centroid()
+            angle=atan2(centroid.y-radius_vector.y,centroid.x-radius_vector.x)
             normal_x[i]=cos(angle)
             normal_y[i]=sin(angle)
-        count=0
 
-    #triangles with two point in shape
-    for i in range(len(triangles)):
-
-        temp_triangle=triangles[i]
-        index=[]
-        for j in range(3):
-            if (Length(points[temp_triangle[j]]-radius_vector))<=radius:
-                count+=1
-                index.append(j)
-        if count==2:
-
-            for p in range(3):
-                if p!=index[0] and p!=index[1]:
-                    index2=p
-            temp_intersection2=[]
-            for k in range(2):
-                temp_intersection2.append(intersection_line_circle(points[temp_triangle[index2]],points[temp_triangle[index[k]]],radius,radius_vector))
-
-                if temp_intersection2[k].x-radius_vector.x>0:
-
-                    if temp_intersection2[k].y-radius_vector.y>0:
-
-                        temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))
-                    else:
-                        temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))+2*pi
-                else:
-                    if temp_intersection2[k].x-radius_vector.x==0 and temp_intersection2[k].y-radius_vector.y<0:
-                        temp_angle=pi*0.5+pi
-                    elif temp_intersection2[k].x-radius_vector.x==0 and temp_intersection2[k].y-radius_vector.y>0:
-                        temp_angle=pi*0.5
-                    elif temp_intersection2[k].y-radius_vector.y>0:
-                        temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))+pi
-                    else:
-                        temp_angle=atan((temp_intersection2[k].y-radius_vector.y)/(temp_intersection2[k].x-radius_vector.x))+pi
-                if k==0:
-                    angle=temp_angle
-                else:
-                    if abs(angle-temp_angle)>pi:
-                        angle=(angle+temp_angle-2*pi)*0.5
-                    else:
-                        angle=(angle+temp_angle)*0.5
-            normal_x[i]=cos(angle)
-            normal_y[i]=sin(angle)
-        count=0
     return normal_x,normal_y
 def find_center_of_circle(n,h,l):
     if n%2==0:
@@ -441,7 +567,8 @@ def find_center_of_circle(n,h,l):
             radius_vector=vector((n-1)*l*0.5+l*0.5,(h-1)*l*0.5)
     print(radius_vector.x)
     print(radius_vector.y)
-    return radius_vector
+    #return radius_vector
+    return vector(24,20)
 def find_point_distance(point,angle,distance):
     return vector(cos(angle)*distance+point.x,sin(angle)*distance+point.y)
 def find_height_function_vertices(length,width,normal_vector,bottom_point):
@@ -586,17 +713,14 @@ def find_adj_cell(triangles):
 def find_height(volume_fraction,points,test,normal_x,normal_y,h,l,circle_center):
 
     #rectangle parameters
-    length=8
-    width=0.9
+    length=11
+    width=l*3.5
     spacing=0.0
-    totalcic=0
-    for w in range(len(volume_fraction)):
-        if volume_fraction[w]!=0 :
-            totalcic=totalcic+volume_fraction[w]
-    print(totalcic*l*l*0.5/radius/radius/pi)
     approximate_radius_points_textfile=[]
     approximate_radius_points=[]
     all_rectangle_points=[]
+    all_rectangle_points_height=[]
+    temp_rectangle_vertices=[]
     for w in range(len(volume_fraction)):
         approximate_radius_point=vector(-1,-1)
         approximate_radius_point2=vector(-1,-1)
@@ -618,41 +742,58 @@ def find_height(volume_fraction,points,test,normal_x,normal_y,h,l,circle_center)
                 angle=atan(normal.y/normal.x)+pi
             else:
                 angle=atan(normal.y/normal.x)
-
             angle=angle+pi
             bottom_point=find_point_distance(centroid,angle,length*0.5)
 
             rectangle_vertices=find_height_function_vertices(length,width,normal,bottom_point)
             all_rectangle_points.append(rectangle_vertices)
+            temp_rectangle_vertices=rectangle_vertices
             area_inside=find_area_height_function(rectangle_vertices,points,triangler)
 
             height=0
             for k in range(len(volume_fraction)):
                 height=height+volume_fraction[k]*area_inside[k]
             height=height/width
+
+            temp_rectangle_vertices[1]=find_point_distance(temp_rectangle_vertices[0],angle-pi,height)
+            temp_rectangle_vertices[2]=find_point_distance(temp_rectangle_vertices[3],angle-pi,height)
+            all_rectangle_points_height.append(temp_rectangle_vertices)
             appr_circl=find_point_distance(bottom_point,angle-pi,height)
             approximate_radius_point=appr_circl
+
+
 
             bottom_point2=find_point_distance(bottom_point,angle-pi/2,width+spacing)
             rectangle_vertices=find_height_function_vertices(length,width,normal,bottom_point2)
             all_rectangle_points.append(rectangle_vertices)
+            temp_rectangle_vertices=rectangle_vertices
             area_inside=find_area_height_function(rectangle_vertices,points,triangler)
             height=0
             for k in range(len(volume_fraction)):
                 height=height+volume_fraction[k]*area_inside[k]
             height=height/width
+            temp_rectangle_vertices[1]=find_point_distance(temp_rectangle_vertices[0],angle-pi,height)
+            temp_rectangle_vertices[2]=find_point_distance(temp_rectangle_vertices[3],angle-pi,height)
+            all_rectangle_points_height.append(temp_rectangle_vertices)
             appr_circl=find_point_distance(bottom_point2,angle-pi,height)
             approximate_radius_point2=appr_circl
+
+
+
 
 
             bottom_point3=find_point_distance(bottom_point,angle+pi/2,width+spacing)
             rectangle_vertices=find_height_function_vertices(length,width,normal,bottom_point3)
             all_rectangle_points.append(rectangle_vertices)
+            temp_rectangle_vertices=rectangle_vertices
             area_inside=find_area_height_function(rectangle_vertices,points,triangler)
             height=0
             for k in range(len(volume_fraction)):
                 height=height+volume_fraction[k]*area_inside[k]
             height=height/width
+            temp_rectangle_vertices[1]=find_point_distance(temp_rectangle_vertices[0],angle-pi,height)
+            temp_rectangle_vertices[2]=find_point_distance(temp_rectangle_vertices[3],angle-pi,height)
+            all_rectangle_points_height.append(temp_rectangle_vertices)
             appr_circl=find_point_distance(bottom_point3,angle-pi,height)
             approximate_radius_point3=appr_circl
         approximate_radius_points.append([approximate_radius_point,approximate_radius_point2,approximate_radius_point3])
@@ -670,7 +811,7 @@ def find_height(volume_fraction,points,test,normal_x,normal_y,h,l,circle_center)
 
     #print(area_inside)
 
-    return approximate_radius_points,all_rectangle_points
+    return approximate_radius_points,all_rectangle_points_height
 def sort_counterclockwise(middle,points_around):
 
     points_around_polar=[]
@@ -738,13 +879,45 @@ def area_polygon(middle,sorted):
 
         total_area=total_area+area([middle,sorted[i],sorted[i+1]])
     return (total_area)
-def curvature(volume_fraction,approximate_radius_points,test,h,points,radius):
+def curvature(volume_fraction,approximate_radius_points,test,h,points,radius,normal_x,normal_y,circle_center):
     parabolic_approximation_coefficients=[]
     singular_matrix_index=[]
+
+    shifted_approximate_radius_points=[]
+
+    list_centroid=[]
+
+    for w in range(len(volume_fraction)):
+        triangler2=triangle(points,test.triangles()[w],h)
+        list_centroid.append(triangler2.centroid())
+    print(singular_matrix_index)
+
+    for i in range(len(volume_fraction)):
+        temp_shifted_approximate_radius_points=[]
+        if volume_fraction[i]!=0 and volume_fraction[i]!=1:
+            j=approximate_radius_points[i]
+            temp_angle=atan2(normal_y[i],normal_x[i])
+            if temp_angle<0:
+                temp_angle=temp_angle+2*pi
+            temp_shifted_approximate_radius_points=[]
+            for w in range(3):
+                temp_x=(j[w].x-circle_center.x)*cos(temp_angle-pi/2)+(j[w].y-circle_center.y)*sin(temp_angle-pi/2)
+                temp_y=-(j[w].x-circle_center.x)*sin(temp_angle-pi/2)+(j[w].y-circle_center.y)*cos(temp_angle-pi/2)
+                temp_shifted_approximate_radius_points.append(vector(temp_x,temp_y))
+                print(temp_x)
+                print(temp_y)
+            print()
+        shifted_approximate_radius_points.append(temp_shifted_approximate_radius_points)
+
+
+
+
+
+
     for k in range(len(approximate_radius_points)):
-        j=approximate_radius_points[k]
+        j=shifted_approximate_radius_points[k]
         x=np.matrix([[0]])
-        if j[0].x!=-1 and j[0].y!=-1:
+        if j!=[] :
             a=np.array([[j[0].x**2,j[0].x,1],[j[1].x**2,j[1].x,1],[j[2].x**2,j[2].x,1]])
             if np.linalg.det(a)!=0:
                 b=np.array([[j[0].y],[j[1].y],[j[2].y]])
@@ -755,26 +928,30 @@ def curvature(volume_fraction,approximate_radius_points,test,h,points,radius):
                 x=np.linalg.solve(a,b)
                 singular_matrix_index.append(k)
                 print("singular matrix")
+            print(x)
         parabolic_approximation_coefficients.append(x)
-        list_centroid=[]
 
-    for w in range(len(volume_fraction)):
-        triangler2=triangle(points,test.triangles()[w],h)
-        list_centroid.append(triangler2.centroid())
-    print(singular_matrix_index)
+
     curvature=[]
     for w in range(len(list_centroid)):
         temp_parabolic_approximation_coefficients=parabolic_approximation_coefficients[w]
         if len(temp_parabolic_approximation_coefficients)!=1:
             if w not in singular_matrix_index:
-                curvature.append(2*temp_parabolic_approximation_coefficients[0][0]/(1+(2*temp_parabolic_approximation_coefficients[0][0]*list_centroid[w].x+temp_parabolic_approximation_coefficients[1][0])**2)**(1.5))
-    error_curvature=[]
+                curvature.append(2*temp_parabolic_approximation_coefficients[0][0]/(1+(temp_parabolic_approximation_coefficients[1][0])**2)**(1.5))
+    error_curvature_max=[]
     for w in curvature:
-        error_curvature.append(abs(1/float(radius)-abs(w)))
+        error_curvature_max.append(abs(1/float(radius)-abs(w)))
     print(curvature)
-    print(error_curvature)
-    print(max(error_curvature))
-    return (list_centroid,curvature)
+    print(error_curvature_max)
+
+    print(max(error_curvature_max))
+
+    print(np.linalg.norm((error_curvature_max),ord=1))
+
+    print(np.linalg.norm((error_curvature_max),ord=2))
+
+
+    return (list_centroid,curvature,error_curvature_max)
 def find_surface_normal(points,triangles,list_centroid):
     surface_normal=[]
     for j in range(len(triangles)):
@@ -783,13 +960,18 @@ def find_surface_normal(points,triangles,list_centroid):
         temp_surface_normal.append(vector(-(points[w[1]].y-points[w[0]].y),points[w[1]].x-points[w[0]].x)*(1/(Length(vector(-(points[w[1]].y-points[w[0]].y),points[w[1]].x-points[w[0]].x)))))
         if (Dot(vector(points[w[1]].x+points[w[0]].x,points[w[1]].y+points[w[0]].y)*0.5-list_centroid[j],vector(-(points[w[1]].y-points[w[0]].y),points[w[1]].x-points[w[0]].x)*(1/(Length(vector(-(points[w[1]].y-points[w[0]].y),points[w[1]].x-points[w[0]].x))))))<0:
             temp_surface_normal[0]=temp_surface_normal[0]*-1
+        temp_surface_normal[0]=temp_surface_normal[0]*Length(points[w[1]]-points[w[0]])
         temp_surface_normal.append(vector(-(points[w[1]].y-points[w[2]].y),points[w[1]].x-points[w[2]].x)*(1/(Length(vector(-(points[w[1]].y-points[w[2]].y),points[w[1]].x-points[w[2]].x)))))
         if (Dot(vector(points[w[1]].x+points[w[2]].x,points[w[1]].y+points[w[2]].y)*0.5-list_centroid[j],vector(-(points[w[1]].y-points[w[2]].y),points[w[1]].x-points[w[2]].x)*(1/(Length(vector(-(points[w[1]].y-points[w[2]].y),points[w[1]].x-points[w[2]].x))))))<0:
             temp_surface_normal[1]=temp_surface_normal[1]*-1
+        temp_surface_normal[1]=temp_surface_normal[1]*Length(points[w[1]]-points[w[2]])
         temp_surface_normal.append(vector(-(points[w[0]].y-points[w[2]].y),points[w[0]].x-points[w[2]].x)*(1/(Length(vector(-(points[w[0]].y-points[w[2]].y),points[w[0]].x-points[w[2]].x)))))
         if (Dot(vector(points[w[0]].x+points[w[2]].x,points[w[0]].y+points[w[2]].y)*0.5-list_centroid[j],vector(-(points[w[0]].y-points[w[2]].y),points[w[0]].x-points[w[2]].x)*(1/(Length(vector(-(points[w[0]].y-points[w[2]].y),points[w[0]].x-points[w[2]].x))))))<0:
             temp_surface_normal[2]=temp_surface_normal[2]*-1
+        temp_surface_normal[2]=temp_surface_normal[2]*Length(points[w[0]]-points[w[2]])
+
         surface_normal.append(temp_surface_normal)
+
     #for w in surface_normal:
         #for j in w:
             #print(j.x)
@@ -834,8 +1016,10 @@ def find_normal_vof(function_f,surface_normal,points,triangles,volume_fraction,n
                 #print((temp_surface_normal[k]*temp_function_f[k]).x)
                 #print((temp_surface_normal[k]*temp_function_f[k]).y)
                 #print()
+
             gradient_f.append((temp_surface_normal2[0]+temp_surface_normal2[1]+temp_surface_normal2[2])*(1/area([points[temp_triangle[0]],points[temp_triangle[1]],points[temp_triangle[2]]])))
-            if Length(gradient_f[w])!=0:
+
+            if Length(gradient_f[w])>=0.000000000000001:
                 normal.append(gradient_f[w]*(-1/Length(gradient_f[w])))
             else:
                 normal.append(vector(0,0))
@@ -843,9 +1027,8 @@ def find_normal_vof(function_f,surface_normal,points,triangles,volume_fraction,n
             normal.append(vector(0,0))
             gradient_f.append([])
         #print(w)
-        #if normal[w]!=[]:
-            #print(normal[w].x)
-            #print(normal[w].y)
+        #print(normal[w].x)
+        #print(normal[w].y)
         #print()
     #for w in range(len(normal_x)):
         #if normal[w]!=[] and normal[w].x==0 and normal[w].y!=0:
@@ -924,29 +1107,30 @@ def create_text_curvature(curvature_height):
             text_file.write ("\n")
 
 #mesh parameters
-l=2.5 #length of triangle
-h=20 #number of rows
-n=20 #number of columns
+l=2 #length of triangle
+h=25 #number of rows
+n=25 #number of columns
 #circle parameters
-radius=8 #radius of circle
+radius=9 #radius of circle
 circle_center=find_center_of_circle(n,h,l)
 
 points=create_points(h,n,l)
 test=unstructured_mesh(points,l,h,n)
 triangler=test.triangles()
 volume_fraction=find_volume_fraction(points,triangler,n,h,l,radius,circle_center)
-normal_x,normal_y=find_normal(points,triangler,volume_fraction,circle_center)
+normal_x,normal_y=find_normal(points,triangler,volume_fraction,circle_center,test,h)
 approximate_radius_points,all_rectangle_points=find_height(volume_fraction,points,test,normal_x,normal_y,h,l,circle_center)
 
 
-list_centroid,curvature_height=curvature(volume_fraction,approximate_radius_points,test,h,points,radius)
+list_centroid,curvature_height,error_curvature=curvature(volume_fraction,approximate_radius_points,test,h,points,radius,normal_x,normal_y,circle_center)
 
 
 adj_cell=find_adj_cell(triangler)
 surface_normal=find_surface_normal(points,triangler,list_centroid)
 function_f=find_function_f_interpolation_colour_function(volume_fraction,triangler,adj_cell,points)
 normal_vof=find_normal_vof(function_f,surface_normal,points,triangler,volume_fraction,normal_x,normal_y)
-create_text(n,h,points,triangler,volume_fraction,normal_x,normal_y,all_rectangle_points,normal_vof)
+
 function_f_normal_vof=find_function_f_interpolation_normal(normal_vof,triangler,adj_cell,points)
 curvature_vof=find_curvature_vof(function_f_normal_vof,surface_normal,points,triangler,volume_fraction)
 create_text_curvature(curvature_height)
+create_text(n,h,points,triangler,volume_fraction,normal_x,normal_y,all_rectangle_points,normal_vof,error_curvature,curvature_height)
